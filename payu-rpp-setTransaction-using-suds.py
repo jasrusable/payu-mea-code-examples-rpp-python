@@ -12,9 +12,8 @@ import logging
 
 
 def payuMeaSetTransactionApiCall(args):
-
     urlToQuery = 'https://secure.payu.co.za/service/PayUAPI?wsdl'
-    if    (args['store']['environment'] == 'staging')    :
+    if args['store']['environment'] == 'staging':
         urlToQuery = 'https://staging.payu.co.za/service/PayUAPI?wsdl'
 
     client = Client(urlToQuery, faults=False)
@@ -54,53 +53,38 @@ def payuMeaSetTransactionApiCall(args):
     transaction['Customer'] = args['customer']
 
     #------------------------------------- DOING SOAP CALL HERE--------------------------------------
-    try:
-        setTransaction = client.service.setTransaction(** transaction)
-    except Exception, e:
-        print "----------------"
-        print 'type is:', e.__class__.__name__
-        print_exc()
-        print "----------------"
-
-    print "--------------    RESPONSE    ----------------"
-    print client.last_sent()
-
-    print "\r\n"
-
-    print "--------------    RESPONSE    ----------------"
-    print client.last_received()
+    setTransaction = client.service.setTransaction(** transaction)
+    print(setTransaction)
 
 
 if __name__ == '__main__':
-    try:
-
-        transactionDetails = {}
-        transactionDetails['store'] = {}
-        transactionDetails['store']['soapUsername'] = 'Staging Integration Store 1'
-        transactionDetails['store']['soapPassword'] = '78cXrW1W'
-        transactionDetails['store']['safekey'] = '{45D5C765-16D2-45A4-8C41-8D6F84042F8C}'
-        transactionDetails['store']['environment'] = 'staging'
-
-        transactionDetails['basket'] = {}
-        transactionDetails['basket']['description'] = 'Basket Description comes here'
-        transactionDetails['basket']['amountInCents'] = '100'
-        transactionDetails['basket']['currencyCode'] = 'ZAR'
-
-        transactionDetails['additionalInformation'] = {}
-        transactionDetails['additionalInformation']['merchantReference'] = random.randrange(1,10+1);
-        transactionDetails['additionalInformation']['returnUrl'] = 'http://example.com/return-url'
-        transactionDetails['additionalInformation']['cancelUrl'] = 'http://example.com/cancel-url'
-        transactionDetails['additionalInformation']['supportedPaymentMethods'] = 'CREDITCARD'
-
-        transactionDetails['customer'] = {}
-        transactionDetails['customer']['merchantUserId'] = "7"
-        transactionDetails['customer']['email'] = "john@doe.com"
-        transactionDetails['customer']['firstName'] = 'John'
-        transactionDetails['customer']['lastName'] = 'Doe'
-        transactionDetails['customer']['mobile'] = '0211234567'
-
-        payuMeaSetTransactionApiCall(transactionDetails)
-
-    except Exception, e:
-        print 'type is:', e.__class__.__name__
-        print_exc()
+    store = {
+        'soapUsername': 'Staging Integration Store 1',
+        'soapPassword': '78cXrW1W',
+        'safekey': '{45D5C765-16D2-45A4-8C41-8D6F84042F8C}',
+        'environment': 'staging',
+    }
+    basket = {
+        'description': 'Some basket description',
+        'amountInCents': '100',
+        'currencyCode': 'ZAR',
+    }
+    additional_info = {
+        'merchantReference': 123,
+        'returnUrl': 'http://eg.com/return',
+        'cancelUrl': 'http://eg.com/cancel',
+        'supportedPaymentMethods': 'CREDITCARD',
+    }
+    customer = {
+        'merchantUserId': '7',
+        'email': 'john@doe.com',
+        'firstName': 'John',
+        'lastName': 'Doe',
+        'mobile': '123455666',
+    }
+    payuMeaSetTransactionApiCall({
+        'store': store,
+        'basket': basket,
+        'additionalInformation': additional_info,
+        'customer': customer,
+    })
