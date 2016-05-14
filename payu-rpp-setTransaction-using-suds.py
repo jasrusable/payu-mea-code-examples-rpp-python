@@ -5,50 +5,51 @@ from suds.sax.element import Element
 from suds.sax.attribute import Attribute
 
 
+wsse = ('wsse', 'http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd')
+
+
 def payuMeaSetTransactionApiCall(args):
-    urlToQuery = 'https://secure.payu.co.za/service/PayUAPI?wsdl'
+    username_token = Element('UsernameToken', ns=wsse)
+    username = Element('Username', ns=wsse).setText(args['store']['soapUsername'])
+    password = Element('Password', ns=wsse).setText(args['store']['soapPassword'])
+    password.append(
+        Attribute('Type', 'http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText')
+    )
+    username_token_things = [
+        username,
+        password,
+        Attribute('wsu:Id', 'UsernameToken-9'),
+        Attribute('xmlns:wsu', 'http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd'),
+    ]
+    for thing in username_token_things:
+        username_token.append(thing)
+
+    security = Element('Security', ns=wsse).addPrefix(p='SOAP-ENC', u='http://www.w3.org/2003/05/soap-encoding')
+    security_things = [
+        username_token,
+        Attribute('SOAP-ENV:mustUnderstand', '1'),
+        Attribute('xmlns:wsse', 'http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd')
+    ]
+    for thing in security_things:
+        security.append(thing)
+
+    transaction = {
+        'Api': 'ONE_ZERO',
+        'Safekey': args['store']['safekey'],
+        'TransactionType': 'PAYMENT',
+        'AdditionalInformation': args['additional_info'],
+        'Basket': args['basket'],
+        'Customer': args['customer']
+    }
+
+    url = 'https://secure.payu.co.za/service/PayUAPI?wsdl'
     if args['store']['environment'] == 'staging':
-        urlToQuery = 'https://staging.payu.co.za/service/PayUAPI?wsdl'
+        url = 'https://staging.payu.co.za/service/PayUAPI?wsdl'
 
-    client = Client(urlToQuery, faults=False)
-
-    #------------------------------------- CREATING CUSTOM HEADER--------------------------------------
-
-    wsse = ('wsse','http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd')
-
-    mustAttributeSecurity = Attribute('SOAP-ENV:mustUnderstand', '1')
-    addressAttributeSecurity = Attribute('xmlns:wsse', 'http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd')
-    AttributeUsernameToken1 = Attribute('wsu:Id','UsernameToken-9')
-    addressAttributeUsernameToken = Attribute('xmlns:wsu','http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd')
-    addressAttributePassword = Attribute('Type','http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText')
-
-    msgUsername = Element('Username', ns=wsse).setText(args['store']['soapUsername'])
-    msgPassword = Element('Password', ns=wsse).setText(args['store']['soapPassword']).append(addressAttributePassword)
-
-    msgUsernameToken = Element('UsernameToken', ns=wsse)
-    msgUsernameToken.append(AttributeUsernameToken1)
-    msgUsernameToken.append(addressAttributeUsernameToken)
-    msgUsernameToken.insert(msgPassword).insert(msgUsername)
-
-    msgSecurity = Element('Security', ns=wsse).addPrefix(p='SOAP-ENC', u='http://www.w3.org/2003/05/soap-encoding')
-    msgSecurity.append(mustAttributeSecurity)
-    msgSecurity.append(addressAttributeSecurity)
-    msgSecurity.insert(msgUsernameToken)
-
-    client.set_options(soapheaders=[msgSecurity])
-
-    #------------------------------------- CREATING SOAP CALL DETAILS HERE--------------------------------------
-    transaction = {}
-    transaction['Api'] = 'ONE_ZERO';
-    transaction['Safekey'] = args['store']['safekey'];
-    transaction['TransactionType'] = 'PAYMENT';
-    transaction['AdditionalInformation'] = args['additionalInformation']
-    transaction['Basket'] = args['basket']
-    transaction['Customer'] = args['customer']
-
-    #------------------------------------- DOING SOAP CALL HERE--------------------------------------
-    setTransaction = client.service.setTransaction(** transaction)
-    print(setTransaction)
+    client = Client(url, faults=False)
+    client.set_options(soapheaders=[security])
+    results = client.service.setTransaction(**transaction)
+    print(results)
 
 
 if __name__ == '__main__':
@@ -76,9 +77,10 @@ if __name__ == '__main__':
         'lastName': 'Doe',
         'mobile': '123455666',
     }
+
     payuMeaSetTransactionApiCall({
         'store': store,
         'basket': basket,
-        'additionalInformation': additional_info,
+        'additional_info': additional_info,
         'customer': customer,
     })
