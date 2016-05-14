@@ -1,14 +1,8 @@
 #!/usr/bin/env python
-import os
-import random
-from traceback import print_exc
+
 from suds.client import Client
-from suds.client import Client, sys
 from suds.sax.element import Element
 from suds.sax.attribute import Attribute
-from suds.xsd.sxbasic import Import
-from suds.wsse import UsernameToken, Security, Token, Timestamp
-import logging
 
 
 def payuMeaSetTransactionApiCall(args):
